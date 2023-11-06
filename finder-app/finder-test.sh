@@ -4,8 +4,6 @@
 
 set -e
 set -u
-#make clean
-#make
 
 NUMFILES=10
 WRITESTR=AELD_IS_FUN
@@ -17,7 +15,7 @@ then
 	echo "Using default value ${WRITESTR} for string to write"
 	if [ $# -lt 1 ]
 	then
-		echo "Using default value ${NUMFILES} for number of files to write"
+		echo "Using default value ${NUMFILES} for the number of files to write"
 	else
 		NUMFILES=$1
 	fi	
@@ -27,9 +25,9 @@ else
 	WRITEDIR=/tmp/aeld-data/$3
 fi
 
-MATCHSTR="The number of files are ${NUMFILES} and the number of matching lines are ${NUMFILES}"
+MATCHSTR="The number of files is ${NUMFILES} and the number of matching lines is ${NUMFILES}"
 
-echo "Writing ${NUMFILES} files containing string ${WRITESTR} to ${WRITEDIR}"
+echo "Writing ${NUMFILES} files containing the string ${WRITESTR} to ${WRITEDIR}"
 
 rm -rf "${WRITEDIR}"
 
@@ -40,7 +38,7 @@ if [ $assignment != 'assignment1' ]
 then
 	mkdir -p "$WRITEDIR"
 
-	#The WRITEDIR is in quotes because if the directory path consists of spaces, then variable substitution will consider it as multiple argument.
+	#The WRITEDIR is in quotes because if the directory path consists of spaces, then variable substitution will consider it as multiple arguments.
 	#The quotes signify that the entire string in WRITEDIR is a single string.
 	#This issue can also be resolved by using double square brackets i.e [[ ]] instead of using quotes.
 	if [ -d "$WRITEDIR" ]
@@ -50,9 +48,6 @@ then
 		exit 1
 	fi
 fi
-#echo "Removing the old writer utility and compiling as a native application"
-#make clean
-#make
 
 for i in $( seq 1 $NUMFILES)
 do
