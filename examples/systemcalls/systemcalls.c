@@ -1,8 +1,5 @@
 #include "systemcalls.h"
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/wait.h>
-#include <fcntl.h>
+
 /**
  * @param cmd the command to execute with system()
  * @return true if the command in @param cmd was executed
@@ -19,8 +16,9 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
-    
-    return (system(cmd) == 0) ? true : false ;
+    bool retVal = (system(cmd) == 0);
+
+    return retVal;
 }
 
 /**
@@ -43,17 +41,15 @@ bool do_exec(int count, ...)
     va_start(args, count);
     char * command[count+1];
     int i;
-    int ret;
-    int status;
     for(i=0; i<count; i++)
     {
         command[i] = va_arg(args, char *);
     }
-    va_end(args);
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
     command[count] = command[count];
+    
 
 /*
  * TODO:
@@ -64,41 +60,24 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
-    //printf("\n\n");
-    pid_t pid = fork();
-   
-    if (pid < 0)
-    { /* error occurred */
-   	printf("Fork Failed");
-   	return false;
-    }
+    int pid = fork();
+    int retVal = 0;
     
-    if (pid == 0)
-    { 
-    
-    /* child process */
-   	ret = execv(command[0], command);
-   	//printf("I'm the child ret = %d \n", ret);
-   	exit(EXIT_FAILURE);
+    if(pid < 0) {
+    	printf("Error occurred in fork()\r\n");
+    	retVal = 1;
+    } else if(pid == 0) {
+    	//Child process code
+    	execv(command[0], command);
     } else {
+    	//Parent process code, wait for all (there is only 1) child
+        waitpid(-1, &retVal, 0);
+
+	}
     
-	    /* parent process */
-
-	    if ( wait(&status) == -1 ) {
-		printf("waitpid failed");
-		return false;
-	    }
-
-	    if ( WIFEXITED(status) ) {
-		ret = WEXITSTATUS(status);
-		//printf("exit status was %d\n", ret);
-	    }
-
-	   //printf("Child Complete \n");
-	   return (ret == 0) ? true : false;
-    }
-
-    return false;
+    va_end(args);
+    bool ret = (retVal == 0);
+    return ret;
 }
 
 /**
@@ -112,80 +91,16 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     va_start(args, count);
     char * command[count+1];
     int i;
-    int ret;
-    int status;
     for(i=0; i<count; i++)
     {
         command[i] = va_arg(args, char *);
     }
-    va_end(args);
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
     command[count] = command[count];
-/*
-	int kidpid;
-	int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
-	if (fd < 0) { perror("open"); abort(); }
-	switch (kidpid = fork()) {
-	  case -1: perror("fork"); abort();
-	  case 0:
-	    if (dup2(fd, 1) < 0) { perror("dup2"); abort(); }
-	    close(fd);
-	    execv(command[0], command); perror("execvp"); abort();
-	  default:
-	    close(fd);
-	    // do whatever the parent wants to do.
-	}
-*/
-    int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
-    if (fd < 0) 
-    {
-       perror("open"); 
-       return false;
-    }
-    //printf("\n\n");
-    pid_t pid = fork();
-   
-    if (pid < 0)
-    { 
-    /* error occurred */
-   	printf("Fork Failed");
-   	return false;
-    }
-    
-    if (pid == 0)
-    { 
-    
-    /* child process */
-	if (dup2(fd, 1) < 0) 
-	{ 
-	    perror("dup2"); 
-           exit(EXIT_FAILURE);
-	}
-	close(fd);
-   	ret = execv(command[0], command);
-   	//printf("I'm the child ret = %d \n", ret);
-   	exit(EXIT_FAILURE);
-    } else {
-   	    close(fd);
-	    /* parent process */
 
-	    if ( wait(&status) == -1 ) {
-		printf("waitpid failed");
-		return false;
-	    }
-
-	    if ( WIFEXITED(status) ) {
-		ret = WEXITSTATUS(status);
-		//printf("exit status was %d\n", ret);
-	    }
-
-	   //printf("Child Complete \n");
-	   return (ret == 0) ? true : false;
-    }
-
-    return false;
+    va_end(args);
 /*
  * TODO
  *   Call execv, but first using https://stackoverflow.com/a/13784315/1446624 as a refernce,
@@ -193,7 +108,29 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *
 */
+    
+    int pid = fork();
+    int retVal = 0;
+    int fd = open(outputfile, O_WRONLY | O_CREAT);
+    
+    if(pid < 0) {
+    	printf("Error occurred in fork()\r\n");
+    	retVal = 1;
+    } else if(pid == 0) {
+    	//Child process code
+        if (dup2(fd, 1) < 0) { 
+            perror("dup2");
+            return 1;
+	}
+    	close(fd);
+    
+    	execv(command[0], command);
+    } else {
+    	//Parent process code, wait for all (there is only 1) child
+    	close(fd);
+    	wait(0);
+    	printf("DEBUG: parent return code %d\r\n", retVal);
+    }
 
-
-
+    return (retVal == 0);
 }
